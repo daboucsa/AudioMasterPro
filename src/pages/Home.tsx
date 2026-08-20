@@ -11,6 +11,25 @@ import {
   VOICE_OPTIONS,
 } from '@/types/settings';
 
+declare global {
+  class SpeechRecognition extends EventTarget {
+    lang: string;
+    continuous: boolean;
+    interimResults: boolean;
+    start(): void;
+    stop(): void;
+    abort(): void;
+    onresult: ((event: SpeechRecognitionEvent) => void) | null;
+    onerror: ((event: Event) => void) | null;
+    onend: (() => void) | null;
+    onstart: (() => void) | null;
+  }
+  class SpeechRecognitionEvent extends Event {
+    resultIndex: number;
+    results: { length: number; [index: number]: { transcript: string } };
+  }
+}
+
 export default function Home() {
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
   const [showSettings, setShowSettings] = useState(false);
@@ -73,14 +92,15 @@ export default function Home() {
 
   const activeConfig: ProviderConfig = settings.providers[settings.activeProvider];
 
-  const synthesizeAgnesVideo = useCallback(async (text: string, config: { apiKey: string; model?: string }) => {
+  const synthesizeAgnesVideo = useCallback(async (text: string, config: ProviderConfig) => {
+    const apiKey = config.apiKey!;
     const model = config.model || 'agnes-video-v2.0';
     setGenerationStatus('正在创建 Agnes 视频任务...');
 
     const createRes = await fetch('/api/videos', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${config.apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -109,7 +129,7 @@ export default function Home() {
       setGenerationStatus(`视频生成中... (${attempt + 1}/30)`);
 
       const pollRes = await fetch(`/api/agnes/video/${encodeURIComponent(videoId)}`, {
-        headers: { 'Authorization': `Bearer ${config.apiKey}` },
+        headers: { 'Authorization': `Bearer ${apiKey}` },
       });
 
       if (!pollRes.ok) {
