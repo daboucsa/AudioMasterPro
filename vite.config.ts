@@ -3,8 +3,11 @@ import react from '@vitejs/plugin-react'
 import tsconfigPaths from "vite-tsconfig-paths";
 import { traeBadgePlugin } from 'vite-plugin-trae-solo-badge';
 
-// https://vite.dev/config/
+const isGitHubPages = process.env.VITE_DEPLOY_GH_PAGES === 'true';
+
+// https://vite.dev/config
 export default defineConfig({
+  base: isGitHubPages ? '/AudioMasterPro/' : '/',
   plugins: [
     react({
       babel: {
